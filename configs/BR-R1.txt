@@ -1,3 +1,4 @@
+!
 version 15.4
 no service timestamps log datetime msec
 no service timestamps debug datetime msec
@@ -31,6 +32,7 @@ username admin privilege 15 secret 5 $1$mERr$bz4s.b7tBmXnoytdmMUBP0
 !
 !
 !
+ip ssh version 2
 no ip domain-lookup
 ip domain-name homelab.local
 !
@@ -66,7 +68,7 @@ ip flow-export version 9
 !
 !
 !
-banner motd ^CAuthorized access only. Activity is monitored. ^C
+banner motd #Authorized access only. Activity is monitored. #
 !
 !
 !
@@ -88,3 +90,4 @@ line vty 5 15
 !
 !
 end
+

@@ -1,6 +1,3 @@
-Building configuration...
-
-Current configuration : 1087 bytes
 !
 version 15.4
 no service timestamps log datetime msec
@@ -48,10 +45,10 @@ spanning-tree mode pvst
 !
 !
 interface GigabitEthernet0/0/0
+ description Trunk to HQ-SW1
  no ip address
  duplex auto
  speed auto
- shutdown
 !
 interface GigabitEthernet0/0/1
  description link to BR-R1
@@ -70,7 +67,7 @@ ip flow-export version 9
 !
 !
 !
-banner motd ^C Authorized access only. Activity is monitored. ^C
+banner motd # Authorized access only. Activity is monitored. #
 !
 !
 !
