@@ -45,10 +45,29 @@ spanning-tree mode pvst
 !
 !
 interface GigabitEthernet0/0/0
- description Trunk to HQ-SW1
  no ip address
  duplex auto
  speed auto
+!
+interface GigabitEthernet0/0/0.10
+ description STAFF gateway
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+!
+interface GigabitEthernet0/0/0.20
+ description GUEST gateway
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+!
+interface GigabitEthernet0/0/0.99
+ description MGMT gateway
+ encapsulation dot1Q 99
+ ip address 192.168.99.1 255.255.255.0
+!
+interface GigabitEthernet0/0/0.999
+ description NATIVE VLAN (no IP)
+ encapsulation dot1Q 999 native
+ no ip address
 !
 interface GigabitEthernet0/0/1
  description link to BR-R1
