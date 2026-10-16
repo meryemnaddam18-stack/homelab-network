@@ -95,7 +95,7 @@ All other switch ports are in VLAN 998 and shut down.
 - [x] Phase 0 – Planning
 - [x] Phase 1 – Base config & SSH
 - [x] Phase 2 – VLANs & trunking
-- [ ] Phase 3 – Inter-VLAN routing
+- [x] Phase 3 – Inter-VLAN routing
 - [ ] Phase 4 – DHCP
 - [ ] Phase 5 – OSPF
 - [ ] Phase 6 – NAT
