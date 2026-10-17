@@ -12,7 +12,18 @@ hostname HQ-R1
 enable secret 5 $1$mERr$h3MsJQ3AumY8rb73Rc6fk.
 !
 !
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.20.1 192.168.20.10
 !
+ip dhcp pool STAFF
+ network 192.168.10.0 255.255.255.0
+ default-router 192.168.10.1
+ dns-server 8.8.8.8
+ domain-name homelab.local
+ip dhcp pool GUEST
+ network 192.168.20.0 255.255.255.0
+ default-router 192.168.20.1
+ dns-server 8.8.8.8
 !
 !
 !
@@ -72,6 +83,8 @@ interface GigabitEthernet0/0/0.999
 interface GigabitEthernet0/0/1
  description link to BR-R1
  ip address 10.0.0.1 255.255.255.252
+ ip ospf network point-to-point
+ ip ospf priority 1
  duplex auto
  speed auto
 !
@@ -80,7 +93,20 @@ interface GigabitEthernet0/0/2
  duplex auto
  speed auto
 !
+router ospf 1
+ router-id 1.1.1.1
+ log-adjacency-changes
+ passive-interface GigabitEthernet0/0/0.10
+ passive-interface GigabitEthernet0/0/0.20
+ passive-interface GigabitEthernet0/0/0.99
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ network 192.168.99.0 0.0.0.255 area 0
+ network 10.0.0.0 0.0.0.3 area 0
+ default-information originate
+!
 ip classless
+ip route 0.0.0.0 0.0.0.0 203.0.113.1 
 !
 ip flow-export version 9
 !
