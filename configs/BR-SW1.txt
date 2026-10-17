@@ -189,15 +189,20 @@ banner motd # Authorized access only. Activity is monitored. #
 !
 !
 !
+ip access-list standard MGMT-SSH
+ permit 192.168.99.0 0.0.0.255
+ deny any
 line con 0
  password 7 0802455D0A163A341D051F0B262E7569
  logging synchronous
  login
 !
 line vty 0 4
+ access-class MGMT-SSH in
  login local
  transport input ssh
 line vty 5 15
+ access-class MGMT-SSH in
  login local
  transport input ssh
 !

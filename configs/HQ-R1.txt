@@ -64,16 +64,20 @@ interface GigabitEthernet0/0/0.10
  description STAFF gateway
  encapsulation dot1Q 10
  ip address 192.168.10.1 255.255.255.0
+ ip nat inside
 !
 interface GigabitEthernet0/0/0.20
  description GUEST gateway
  encapsulation dot1Q 20
  ip address 192.168.20.1 255.255.255.0
+ ip nat inside
+ ip access-group GUEST-IN in
 !
 interface GigabitEthernet0/0/0.99
  description MGMT gateway
  encapsulation dot1Q 99
  ip address 192.168.99.1 255.255.255.0
+ ip nat inside
 !
 interface GigabitEthernet0/0/0.999
  description NATIVE VLAN (no IP)
@@ -85,11 +89,13 @@ interface GigabitEthernet0/0/1
  ip address 10.0.0.1 255.255.255.252
  ip ospf network point-to-point
  ip ospf priority 1
+ ip nat inside
  duplex auto
  speed auto
 !
 interface GigabitEthernet0/0/2
  ip address 203.0.113.2 255.255.255.252
+ ip nat outside
  duplex auto
  speed auto
 !
@@ -105,12 +111,33 @@ router ospf 1
  network 10.0.0.0 0.0.0.3 area 0
  default-information originate
 !
+ip nat inside source list NAT-INSIDE interface GigabitEthernet0/0/2 overload
 ip classless
 ip route 0.0.0.0 0.0.0.0 203.0.113.1 
 !
 ip flow-export version 9
 !
 !
+ip access-list standard NAT
+ip access-list standard NAT-INSIDE
+ permit 192.168.10.0 0.0.0.255
+ permit 192.168.20.0 0.0.0.255
+ permit 192.168.30.0 0.0.0.255
+ permit 192.168.99.0 0.0.0.255
+ip access-list extended GUEST-IN
+ remark allow dhcp requests to the router
+ permit udp any any eq bootps
+ remark block Guest from internal networks
+ deny ip 192.168.20.0 0.0.0.255 192.168.10.0 0.0.0.255
+ deny ip 192.168.20.0 0.0.0.255 192.168.99.0 0.0.0.255
+ deny ip 192.168.20.0 0.0.0.255 192.168.30.0 0.0.0.255
+ deny ip 192.168.20.0 0.0.0.255 10.0.0.0 0.0.0.3
+ remark Allow everything else (internet)
+ permit ip 192.168.20.0 0.0.0.255 any
+ip access-list standard MGMT-SSH
+ remark Only the management VLAN may SSH in
+ permit 192.168.99.0 0.0.0.255
+ deny any
 !
 banner motd # Authorized access only. Activity is monitored. #
 !
@@ -125,9 +152,11 @@ line con 0
 line aux 0
 !
 line vty 0 4
+ access-class MGMT-SSH in
  login local
  transport input ssh
 line vty 5 15
+ access-class MGMT-SSH in
  login local
  transport input ssh
 !
