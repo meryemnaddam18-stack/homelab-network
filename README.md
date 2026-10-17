@@ -76,14 +76,37 @@ so DHCP starts at .11.
 
 All other switch ports are in VLAN 998 and shut down.
 
+## Routing and Services
+
+| Service | Where | Details |
+|---|---|---|
+| Inter-VLAN routing | HQ-R1 | Router-on-a-stick: subinterfaces G0/0/0.10, .20, .99 and a native-only .999 |
+| DHCP | HQ-R1, BR-R1 | Pools STAFF and GUEST on HQ-R1, BRANCH on BR-R1; .1–.10 excluded in each |
+| OSPFv2 | HQ-R1, BR-R1 | Area 0, router IDs 1.1.1.1 (HQ) and 2.2.2.2 (branch), passive user-facing interfaces |
+| Default route | HQ-R1 | Static default to the ISP, shared with the branch via `default-information originate` |
+| PAT | HQ-R1 | All internal networks (HQ and branch) translated to 203.0.113.2 on G0/0/2 |
+
 ## Security Policy
 
 1. Guest (VLAN 20) **cannot** reach Staff, Management, or the Branch. Internet access only.
 2. Only Admin-PC (VLAN 99) can SSH into routers and switches.
 3. Staff and Branch can reach each other and the internet.
 
+### Implementation
+
+| Rule | Enforced by | Applied on |
+|---|---|---|
+| 1. Guest isolation | Extended ACL `GUEST-IN`: permits DHCP, denies Guest to 192.168.10.0/24, 192.168.99.0/24, 192.168.30.0/24 and 10.0.0.0/30, then permits everything else | HQ-R1 G0/0/0.20, inbound |
+| 2. Management-only SSH | Standard ACL `MGMT-SSH`: permits 192.168.99.0/24 only | `access-class` on VTY lines of HQ-R1, BR-R1, HQ-SW1, BR-SW1 |
+| 3. Staff ↔ Branch ↔ Internet | OSPF routes between sites and PAT at the HQ edge | HQ-R1, BR-R1 |
+
+ACLs are stateless, so a side effect of rule 1 is that Staff can no longer
+ping Guest: the request arrives, but Guest's reply is dropped by `GUEST-IN`.
+A stateful firewall would allow the return traffic.
+
 ### Hardening applied
 - SSH version 2 only (2048-bit RSA keys), Telnet disabled on all VTY lines
+- SSH restricted to the management VLAN with VTY access-class ACLs
 - Local user authentication, hashed `enable secret`, idle timeouts
 - Native VLAN moved off VLAN 1, DTP disabled on the trunk, allowed VLANs restricted
 - Unused switch ports parked in VLAN 998 and shut down; VLAN 1 interface disabled
@@ -92,14 +115,17 @@ All other switch ports are in VLAN 998 and shut down.
 > be committed to a repository.
 
 ## Build Phases
+
+Each phase links to the outputs that prove it works.
+
 - [x] Phase 0 – Planning
-- [x] Phase 1 – Base config & SSH
-- [x] Phase 2 – VLANs & trunking
-- [x] Phase 3 – Inter-VLAN routing
-- [ ] Phase 4 – DHCP
-- [ ] Phase 5 – OSPF
-- [ ] Phase 6 – NAT
-- [ ] Phase 7 – ACLs
+- [x] [Phase 1 – Base config & SSH](verification/phase1.md)
+- [x] [Phase 2 – VLANs & trunking](verification/phase2.md)
+- [x] [Phase 3 – Inter-VLAN routing](verification/phase3.md)
+- [x] [Phase 4 – DHCP](verification/phase4.md)
+- [x] [Phase 5 – OSPF](verification/phase5.md)
+- [x] [Phase 6 – NAT](verification/phase6.md)
+- [x] [Phase 7 – ACLs](verification/phase7.md)
 
 ## Repository Structure
 
@@ -109,6 +135,23 @@ All other switch ports are in VLAN 998 and shut down.
 | `configs/` | Running configuration of each device |
 | `verification/` | `show` command outputs and tests proving each phase works |
 | `troubleshooting.md` | Problems encountered, their cause and fix |
+
+## What I Learned
+- Verifying each layer before moving on: most problems were found with
+  `show vlan brief`, `show ip nat statistics` and ACL match counters, not by guessing.
+- A port's physical cabling has to match the plan: a PC on the wrong switch
+  port silently ends up in the wrong VLAN.
+- NAT direction matters: with the outside interface marked as inside,
+  packets left with private source addresses and the ISP dropped the replies.
+- ACL order and the implicit deny decide what actually gets through, and
+  extended ACLs belong close to the source.
+
+## Future Improvements
+- HSRP for gateway redundancy at HQ
+- A Layer 3 switch to replace router-on-a-stick
+- Centralized DHCP at HQ with `ip helper-address` on the branch
+- Port security and DHCP snooping on the access switches
+- Syslog and NTP for centralized logging with accurate timestamps
 
 ## Notes
 - The Catalyst 2960 image in Packet Tracer does not support
